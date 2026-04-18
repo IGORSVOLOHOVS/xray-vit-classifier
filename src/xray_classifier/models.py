@@ -35,7 +35,8 @@ class ModelWrapper:
         )
 
         # Re-initialize the classifier head for binary classification
-        self.model.classifier = nn.Linear(self.model.classifier.in_features, num_labels)
+        in_features = getattr(self.model.classifier, "in_features", 768)
+        self.model.classifier = nn.Linear(int(in_features), num_labels)
 
         # Freeze base layers by default
         self._freeze_base_layers()
@@ -49,7 +50,7 @@ class ModelWrapper:
 
     def to(self, device: torch.device) -> "ModelWrapper":
         """Moves the model to the specified device."""
-        self.model.to(device)
+        self.model.to(device)  # type: ignore[arg-type]
         return self
 
     def save(self, path: str | Path) -> None:
