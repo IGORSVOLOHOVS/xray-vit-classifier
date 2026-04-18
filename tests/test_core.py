@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import torch
+
 from xray_classifier.data import DatasetManager, ViTTransform
 from xray_classifier.models import ModelWrapper
 

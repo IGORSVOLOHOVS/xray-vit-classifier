@@ -1,6 +1,7 @@
 """Script for visualizing ViT attention maps on misclassified samples."""
 
 import torch
+
 from xray_classifier.data import DatasetManager
 from xray_classifier.interpretability import AttentionVisualizer
 from xray_classifier.models import ModelWrapper
