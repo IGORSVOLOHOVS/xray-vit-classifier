@@ -1,6 +1,9 @@
 # X-ray Bone Fracture Classifier
 
+
 A high-performance binary classifier for detecting bone fractures in X-ray images using Vision Transformers (ViT).
+![Hero Image](prediction_samples/correct_0.png)
+
 
 ## Overview
 
@@ -63,8 +66,16 @@ The script will:
 
 The model generates visual evidence of its predictions in the `prediction_samples/` directory.
 
-- `correct_*.png`: Images where the model prediction matched the ground truth.
-- `incorrect_*.png`: Images where the model failed, provided for debugging and improvement.
+### Correct Predictions
+| Correct Sample 0 | Correct Sample 1 |
+| :---: | :---: |
+| ![Correct 0](prediction_samples/correct_0.png) | ![Correct 1](prediction_samples/correct_1.png) |
+
+### Incorrect Predictions (Error Analysis)
+| Incorrect Sample 0 | Incorrect Sample 1 |
+| :---: | :---: |
+| ![Incorrect 0](prediction_samples/incorrect_0.png) | ![Incorrect 1](prediction_samples/incorrect_1.png) |
 
 ---
 Developed as part of the Computer-Vision project suite.
+
