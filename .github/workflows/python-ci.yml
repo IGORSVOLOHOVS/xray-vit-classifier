@@ -12,14 +12,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v1
+    - name: Install uv and Python
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
         cache-dependency-path: "pyproject.toml"
-
-    - name: Set up Python 3.10
-      run: uv python install 3.10
+        python-version: "3.10"
 
     - name: Install Dependencies
       run: uv sync --all-extras
