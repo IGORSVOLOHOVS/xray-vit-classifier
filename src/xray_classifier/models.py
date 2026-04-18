@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 import torch
 from torch import nn
@@ -50,7 +50,7 @@ class ModelWrapper:
 
     def to(self, device: torch.device) -> "ModelWrapper":
         """Moves the model to the specified device."""
-        self.model.to(device)
+        self.model.to(device)  # type: ignore[arg-type]
         return self
 
     def save(self, path: str | Path) -> None:
@@ -64,7 +64,7 @@ class ModelWrapper:
 
     def eval(self) -> "ModelWrapper":
         """Sets the model to evaluation mode."""
-        self.model.eval()
+        cast(nn.Module, self.model).eval()
         return self
 
     def __call__(self, x: torch.Tensor) -> Any:
