@@ -193,7 +193,10 @@ def run_pipeline() -> None:
     # Hardware Check
     cuda_available = torch.cuda.is_available()
     device_name = "cuda" if cuda_available else "cpu"
-    hw_status = f"CUDA: {'[green]ON[/]' if cuda_available else '[red]OFF[/]'} | Device: [blue]{device_name}[/]"
+    hw_status = (
+        f"CUDA: {'[green]ON[/]' if cuda_available else '[red]OFF[/]'} | "
+        f"Device: [blue]{device_name}[/]"
+    )
     ui.print_panel(hw_status, title="Environment")
 
     # Load Model

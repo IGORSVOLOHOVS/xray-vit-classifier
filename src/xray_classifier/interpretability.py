@@ -92,8 +92,9 @@ class AttentionVisualizer:
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(12, 6))
         axes[0].imshow(image)
-        title_text = f"Original (T: {self.data_provider.classes[true_label]}, P: {self.data_provider.classes[pred]})"
-        axes[0].set_title(title_text)
+        t_cls = self.data_provider.classes[true_label]
+        p_cls = self.data_provider.classes[pred]
+        axes[0].set_title(f"Original (T: {t_cls}, P: {p_cls})")
         axes[0].axis("off")
 
         # Interpolate heatmap
