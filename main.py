@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 from rich.traceback import install
-
 from xray_classifier.engine import run_pipeline
 from xray_classifier.ui import UIHandler
 
@@ -23,9 +22,7 @@ def main() -> None:
     train_parser.add_argument(
         "--epochs", type=int, default=1, help="Number of epochs to train (default: 1)"
     )
-    train_parser.add_argument(
-        "--batch-size", type=int, default=32, help="Batch size (default: 32)"
-    )
+    train_parser.add_argument("--batch-size", type=int, default=32, help="Batch size (default: 32)")
 
     # Command: eval
     eval_parser = subparsers.add_parser("eval", help="Evaluate the model and generate samples")
@@ -52,12 +49,13 @@ def main() -> None:
     elif args.command == "eval":
         ui.log(f"Evaluating model using weights: {args.weights}")
         # Logic to be refined in engine.py for pure evaluation
-        run_pipeline() 
+        run_pipeline()
     elif args.command == "explain":
         ui.log(f"Generating {args.count} attention maps using {args.weights}...")
         # Will bridge to visualize_attention logic
         try:
             from visualize_attention import main as run_viz
+
             run_viz()
         except ImportError:
             ui.log("[bold red]Failed to import visualization module.")

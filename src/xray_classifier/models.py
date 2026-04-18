@@ -50,7 +50,7 @@ class ModelWrapper:
 
     def to(self, device: torch.device) -> "ModelWrapper":
         """Moves the model to the specified device."""
-        self.model.to(device)  # type: ignore[arg-type]
+        self.model.to(device)
         return self
 
     def save(self, path: str | Path) -> None:
@@ -64,7 +64,7 @@ class ModelWrapper:
 
     def eval(self) -> "ModelWrapper":
         """Sets the model to evaluation mode."""
-        self.model.eval()  # type: ignore[no-untyped-call]
+        self.model.eval()
         return self
 
     def __call__(self, x: torch.Tensor) -> Any:

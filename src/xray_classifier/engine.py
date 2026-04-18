@@ -174,13 +174,15 @@ class TrainingEngine:
             img = Image.open(sample["path"]).convert("RGB")
             draw = ImageDraw.Draw(img)
             text = f"True: {sample['true']}\nPred: {sample['pred']}"
-            font: Any
+            font_obj: Any
             try:
-                font = ImageFont.truetype("arial.ttf", 20)
+                font_obj = ImageFont.truetype("arial.ttf", 20)
             except Exception:
-                font = ImageFont.load_default()
+                font_obj = ImageFont.load_default()
 
-            draw.text((10, 10), text, fill="red" if prefix == "incorrect" else "green", font=font)
+            draw.text(
+                (10, 10), text, fill="red" if prefix == "incorrect" else "green", font=font_obj
+            )
             img.save(self.output_dir / f"{prefix}_{i}.png")
 
 
@@ -191,10 +193,8 @@ def run_pipeline() -> None:
     # Hardware Check
     cuda_available = torch.cuda.is_available()
     device_name = "cuda" if cuda_available else "cpu"
-    ui.print_panel(
-        f"CUDA: {'[green]ON[/]' if cuda_available else '[red]OFF[/]'} | Device: [blue]{device_name}[/]",
-        title="Environment",
-    )
+    hw_status = f"CUDA: {'[green]ON[/]' if cuda_available else '[red]OFF[/]'} | Device: [blue]{device_name}[/]"
+    ui.print_panel(hw_status, title="Environment")
 
     # Load Model
     model_name = "google/vit-base-patch16-224"

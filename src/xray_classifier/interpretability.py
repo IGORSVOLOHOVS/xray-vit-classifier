@@ -3,7 +3,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 from PIL import Image
 
 from .data import DataProvider
@@ -55,7 +55,7 @@ class AttentionVisualizer:
                 all_preds.extend(predicted.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
 
-        indices = [i for i, (p, t) in enumerate(zip(all_preds, all_labels)) if p != t]
+        indices = [i for i, (p, t) in enumerate(zip(all_preds, all_labels, strict=False)) if p != t]
 
         if not indices:
             self.ui.log("[bold red]No errors found to analyze.")
@@ -92,9 +92,8 @@ class AttentionVisualizer:
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(12, 6))
         axes[0].imshow(image)
-        axes[0].set_title(
-            f"Original (T: {self.data_provider.classes[true_label]}, P: {self.data_provider.classes[pred]})"
-        )
+        title_text = f"Original (T: {self.data_provider.classes[true_label]}, P: {self.data_provider.classes[pred]})"
+        axes[0].set_title(title_text)
         axes[0].axis("off")
 
         # Interpolate heatmap
