@@ -63,7 +63,7 @@ class ModelWrapper:
 
     def eval(self) -> "ModelWrapper":
         """Sets the model to evaluation mode."""
-        self.model.eval()
+        self.model.eval()  # type: ignore[no-untyped-call]
         return self
 
     def __call__(self, x: torch.Tensor) -> Any:

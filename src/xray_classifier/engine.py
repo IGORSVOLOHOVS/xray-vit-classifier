@@ -122,8 +122,8 @@ class TrainingEngine:
             A classification report dictionary.
         """
         self.model.eval()
-        all_preds = []
-        all_labels = []
+        all_preds: list[int] = []
+        all_labels: list[int] = []
         correct_samples: list[dict[str, Any]] = []
         incorrect_samples: list[dict[str, Any]] = []
 
@@ -145,7 +145,8 @@ class TrainingEngine:
                         break
 
                     dataset: Any = loader.dataset
-                    img_path, _ = dataset.samples[batch_idx * loader.batch_size + i]
+                    batch_size = loader.batch_size if loader.batch_size is not None else 1
+                    img_path, _ = dataset.samples[batch_idx * batch_size + i]
 
                     sample = {
                         "path": img_path,
@@ -164,7 +165,7 @@ class TrainingEngine:
 
         report: dict[str, Any] = classification_report(
             all_labels, all_preds, target_names=classes, output_dict=True
-        )  # type: ignore
+        )
         return report
 
     def _save_images(self, samples: list[dict[str, Any]], prefix: str) -> None:
@@ -173,6 +174,7 @@ class TrainingEngine:
             img = Image.open(sample["path"]).convert("RGB")
             draw = ImageDraw.Draw(img)
             text = f"True: {sample['true']}\nPred: {sample['pred']}"
+            font: Any
             try:
                 font = ImageFont.truetype("arial.ttf", 20)
             except Exception:
