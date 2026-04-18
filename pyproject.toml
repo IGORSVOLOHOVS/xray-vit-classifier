@@ -42,6 +42,10 @@ ignore = [
     "S101", # allow assert
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["xray_classifier"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
 [tool.mypy]
 python_version = "3.10"
 strict = true
