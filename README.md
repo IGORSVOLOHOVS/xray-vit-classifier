@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![Checked with mypy](https://img.shields.io/badge/checked_with-mypy-21c0ad.svg)](http://mypy-lang.org/)
 
 A professional, high-performance binary classifier for detecting bone fractures in X-ray images using **Vision Transformers (ViT)**. Designed with **Clean Architecture** principles and optimized for **ISO 25010** quality attributes.
 
@@ -64,7 +64,7 @@ make install
 python main.py train
 
 # Evaluate and generate prediction samples
-python main.py eval --weights classifier_0.pt
+python main.py eval --weights xray_vit_classifier_v0.1.0.pt
 
 # Analyze errors with Attention Heatmaps
 python main.py explain --count 10

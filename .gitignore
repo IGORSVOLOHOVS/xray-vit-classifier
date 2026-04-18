@@ -16,12 +16,14 @@ env/
 Bone_Fracture_Binary_Classification/
 
 # Results & Artifacts
+dist/
+build/
+*.egg-info/
 prediction_samples/
 attention_maps/
 results/
 out/
-Figure_1.png
-image.png
+*.png
 
 # IDEs
 .vscode/
