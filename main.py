@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 from rich.traceback import install
-
 from xray_classifier.engine import run_pipeline
 from xray_classifier.ui import UIHandler
 
