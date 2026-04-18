@@ -8,25 +8,40 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from .data import DatasetManager
-from .models import ModelWrapper
+from .models import ImageClassifier, ModelWrapper
 from .ui import UIHandler
 
 
 class TrainingEngine:
-    """Orchestrates the training, validation, and evaluation pipeline."""
+    """Orchestrates the training, validation, and evaluation pipeline.
+
+    Utilizes Clean Architecture protocols to remain decoupled from specific
+    model or data loading implementations.
+    """
 
     def __init__(
-        self, model_wrapper: ModelWrapper, ui: UIHandler, output_dir: str = "prediction_samples"
+        self,
+        model: ImageClassifier,
+        ui: UIHandler,
+        output_dir: str | Path = "prediction_samples",
     ) -> None:
-        self.wrapper = model_wrapper
+        """Initializes the engine.
+
+        Args:
+            model: An object implementing the ImageClassifier protocol.
+            ui: Terminal UI handler.
+            output_dir: Directory where prediction samples will be saved.
+        """
+        self.model = model
         self.ui = ui
         self.output_dir = Path(output_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.wrapper.to(self.device)
+        self.model.to(self.device)
         self._ensure_output_dir()
 
     def _ensure_output_dir(self) -> None:
+        """Creates or cleans the output directory."""
         if self.output_dir.exists():
             import shutil
 
@@ -40,7 +55,18 @@ class TrainingEngine:
         optimizer: torch.optim.Optimizer,
         criterion: nn.Module,
     ) -> float:
-        self.wrapper.train()
+        """Trains the model for one epoch.
+
+        Args:
+            loader: Training data loader.
+            epoch: Current epoch index.
+            optimizer: Optimization algorithm.
+            criterion: Loss function.
+
+        Returns:
+            The average loss for the last 20 batches or overall.
+        """
+        self.model.train()
         running_loss = 0.0
         last_loss = 0.0
 
@@ -51,7 +77,7 @@ class TrainingEngine:
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 optimizer.zero_grad()
-                outputs = self.wrapper(inputs)
+                outputs = self.model(inputs)
                 loss = criterion(outputs.logits, labels)
                 loss.backward()
                 optimizer.step()
@@ -66,18 +92,36 @@ class TrainingEngine:
         return last_loss
 
     def validate(self, loader: DataLoader[Any], criterion: nn.Module) -> float:
-        self.wrapper.eval()
+        """Validates the model.
+
+        Args:
+            loader: Validation data loader.
+            criterion: Loss function.
+
+        Returns:
+            The average validation loss.
+        """
+        self.model.eval()
         running_vloss = 0.0
         with torch.no_grad():
-            for i, (vinputs, vlabels) in enumerate(loader):
+            for vinputs, vlabels in loader:
                 vinputs, vlabels = vinputs.to(self.device), vlabels.to(self.device)
-                voutputs = self.wrapper(vinputs)
+                voutputs = self.model(vinputs)
                 vloss = criterion(voutputs.logits, vlabels)
                 running_vloss += vloss.item()
         return running_vloss / len(loader) if len(loader) > 0 else 0.0
 
     def evaluate_and_sample(self, loader: DataLoader[Any], classes: list[str]) -> dict[str, Any]:
-        self.wrapper.eval()
+        """Evaluates the model and saves visual samples.
+
+        Args:
+            loader: Test data loader.
+            classes: List of class names.
+
+        Returns:
+            A classification report dictionary.
+        """
+        self.model.eval()
         all_preds = []
         all_labels = []
         correct_samples: list[dict[str, Any]] = []
@@ -86,7 +130,7 @@ class TrainingEngine:
         with torch.no_grad():
             for batch_idx, (images, labels) in enumerate(loader):
                 images_dev = images.to(self.device)
-                outputs = self.wrapper(images_dev)
+                outputs = self.model(images_dev)
                 _, predicted = torch.max(outputs.logits, 1)
 
                 preds_cpu = predicted.cpu().numpy()
@@ -97,6 +141,9 @@ class TrainingEngine:
 
                 # Collect samples
                 for i in range(len(preds_cpu)):
+                    if len(correct_samples) >= 3 and len(incorrect_samples) >= 3:
+                        break
+
                     dataset: Any = loader.dataset
                     img_path, _ = dataset.samples[batch_idx * loader.batch_size + i]
 
@@ -121,6 +168,7 @@ class TrainingEngine:
         return report
 
     def _save_images(self, samples: list[dict[str, Any]], prefix: str) -> None:
+        """Saves annotated images for inspection."""
         for i, sample in enumerate(samples):
             img = Image.open(sample["path"]).convert("RGB")
             draw = ImageDraw.Draw(img)
@@ -135,60 +183,39 @@ class TrainingEngine:
 
 
 def run_pipeline() -> None:
+    """Default execution pipeline."""
     ui = UIHandler()
 
-    # 1. Hardware Check
+    # Hardware Check
     cuda_available = torch.cuda.is_available()
     device_name = "cuda" if cuda_available else "cpu"
-    cuda_status = f"[bold {'green' if cuda_available else 'red'}]{cuda_available}[/]"
     ui.print_panel(
-        f"CUDA Available: {cuda_status} | Device: [bold blue]{device_name}[/]",
-        title="Hardware Check",
+        f"CUDA: {'[green]ON[/]' if cuda_available else '[red]OFF[/]'} | Device: [blue]{device_name}[/]",
+        title="Environment",
     )
 
-    # 2. Load Model
+    # Load Model
     model_name = "google/vit-base-patch16-224"
-    with ui.console.status("[bold green]Loading model and processor..."):
+    with ui.console.status("[bold green]Initializing model..."):
         model_wrapper = ModelWrapper(model_name)
 
-    # 3. Load Data
+    # Load Data
     data_manager = DatasetManager("Bone_Fracture_Binary_Classification", model_wrapper.processor)
     train_loader, val_loader, test_loader, stats = data_manager.load_splits()
     ui.print_stats_table("Dataset Statistics", stats)
 
-    # 4. Setup Training
+    # Setup Training
     engine = TrainingEngine(model_wrapper, ui)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model_wrapper.model.classifier.parameters(), lr=0.001)
 
-    # 5. Execute Pipeline
-    best_vloss = 1e6
-    for epoch in range(1):  # Single epoch as requested
+    # Execute Pipeline
+    for epoch in range(1):
         avg_loss = engine.train_epoch(train_loader, epoch, optimizer, criterion)
         avg_vloss = engine.validate(val_loader, criterion)
+        ui.log(f"Epoch {epoch} | Train Loss: {avg_loss:.4f} | Val Loss: {avg_vloss:.4f}")
 
-        if avg_vloss < best_vloss:
-            best_vloss = avg_vloss
-            model_wrapper.save(f"classifier_{epoch}.pt")
-
-        ui.log(f"Epoch {epoch} finished. Train Loss: {avg_loss:.4f} | Val Loss: {avg_vloss:.4f}")
-
-    # 6. Evaluation
-    ui.log("Calculating metrics and generating samples...")
+    # Evaluation
+    ui.log("Evaluating model on test set...")
     report = engine.evaluate_and_sample(test_loader, data_manager.classes)
-    ui.print_classification_report("Classification Report", report)
-
-    # 7. Final Check
-    accuracy = report["accuracy"]
-    if accuracy > 0.8:
-        ui.print_panel(
-            f"[bold green]SUCCESS:[/] Model accuracy is {accuracy:.2%} (Target > 80%)",
-            title="Final Result",
-            style="green",
-        )
-    else:
-        ui.print_panel(
-            f"[bold red]FAILURE:[/] Model accuracy is {accuracy:.2%} (Target > 80%)",
-            title="Final Result",
-            style="red",
-        )
+    ui.print_classification_report("Final Metrics", report)

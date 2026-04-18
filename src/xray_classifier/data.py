@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import torch
 from PIL import Image, ImageFile
@@ -11,17 +11,34 @@ from transformers import ViTImageProcessor
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
+@runtime_checkable
+class DataProvider(Protocol):
+    """Protocol for data loading and management."""
+
+    def load_splits(
+        self, batch_size: int = 32
+    ) -> tuple[DataLoader[Any], DataLoader[Any], DataLoader[Any], dict[str, int]]: ...
+
+    @property
+    def classes(self) -> list[str]: ...
+
+
 class ViTTransform:
-    """Wrapper for ViT image processing as a torch transform."""
+    """Wrapper for ViT image processing as a torch transform.
+
+    This ensures that image processing logic remains consistent across
+    training and inference.
+    """
 
     def __init__(self, processor: ViTImageProcessor) -> None:
         self.processor = processor
 
     def __call__(self, image: Image.Image) -> torch.Tensor:
+        """Transforms a PIL image into a torch tensor."""
         if image.mode != "RGB":
             image = image.convert("RGB")
         inputs = self.processor(images=image, return_tensors="pt")
-        # Cast to Tensor to satisfy type checkers as return_tensors="pt" returns torch.Tensor
+        # Extract pixel values tensor
         tensor = inputs["pixel_values"].squeeze(0)
         if not isinstance(tensor, torch.Tensor):
             raise TypeError("Expected torch.Tensor from processor")
@@ -29,7 +46,11 @@ class ViTTransform:
 
 
 class DatasetManager:
-    """Manages dataset loading and split creation."""
+    """Manages dataset loading and split creation.
+
+    Implements the DataProvider protocol to decouple the engine from
+    the specific filesystem structure.
+    """
 
     def __init__(self, data_root: str | Path, processor: ViTImageProcessor) -> None:
         self.data_root = Path(data_root)
@@ -40,7 +61,14 @@ class DatasetManager:
     def load_splits(
         self, batch_size: int = 32
     ) -> tuple[DataLoader[Any], DataLoader[Any], DataLoader[Any], dict[str, int]]:
-        """Loads train, val, and test splits and returns DataLoaders."""
+        """Loads train, val, and test splits and returns DataLoaders.
+
+        Args:
+            batch_size: Number of samples per batch.
+
+        Returns:
+            A tuple containing (train_loader, val_loader, test_loader, stats_dict).
+        """
         train_path = self.data_root / "train"
         val_path = self.data_root / "val"
         test_path = self.data_root / "test"
@@ -67,4 +95,5 @@ class DatasetManager:
 
     @property
     def classes(self) -> list[str]:
+        """Returns the list of class names."""
         return self._classes

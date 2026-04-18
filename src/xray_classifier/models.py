@@ -1,12 +1,28 @@
 from pathlib import Path
+from typing import Any, Protocol, runtime_checkable
 
 import torch
 from torch import nn
 from transformers import ViTForImageClassification, ViTImageProcessor
 
 
+@runtime_checkable
+class ImageClassifier(Protocol):
+    """Protocol for image classification models."""
+
+    def to(self, device: torch.device) -> "ImageClassifier": ...
+    def save(self, path: str | Path) -> None: ...
+    def train(self, mode: bool = True) -> "ImageClassifier": ...
+    def eval(self) -> "ImageClassifier": ...
+    def __call__(self, x: torch.Tensor) -> Any: ...
+
+
 class ModelWrapper:
-    """Wraps ViT model for training and inference."""
+    """Wraps ViT model for training and inference.
+
+    Following Clean Architecture, this class implements the ImageClassifier protocol
+    and isolates the transformers dependency from the core engine.
+    """
 
     def __init__(self, model_name: str, num_labels: int = 2) -> None:
         self.model_name = model_name
@@ -14,7 +30,9 @@ class ModelWrapper:
 
         # Load pre-trained components
         self.processor = ViTImageProcessor.from_pretrained(model_name)
-        self.model = ViTForImageClassification.from_pretrained(model_name, output_attentions=True)
+        self.model: ViTForImageClassification = ViTForImageClassification.from_pretrained(
+            model_name, output_attentions=True
+        )
 
         # Re-initialize the classifier head for binary classification
         self.model.classifier = nn.Linear(self.model.classifier.in_features, num_labels)
@@ -38,11 +56,16 @@ class ModelWrapper:
         """Saves the model state dict."""
         torch.save(self.model.state_dict(), path)
 
-    def train(self) -> None:
-        self.model.train()
+    def train(self, mode: bool = True) -> "ModelWrapper":
+        """Sets the model to training mode."""
+        self.model.train(mode)
+        return self
 
-    def eval(self) -> None:
+    def eval(self) -> "ModelWrapper":
+        """Sets the model to evaluation mode."""
         self.model.eval()
+        return self
 
-    def __call__(self, *args: any, **kwargs: any) -> any:
-        return self.model(*args, **kwargs)
+    def __call__(self, x: torch.Tensor) -> Any:
+        """Forward pass."""
+        return self.model(x)
