@@ -32,7 +32,7 @@ out/
 *.swp
 
 # Agent
-.agent/tmp/
+.agent/
 
 # Logs
 *.log
