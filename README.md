@@ -71,11 +71,21 @@ The model generates visual evidence of its predictions in the `prediction_sample
 | :---: | :---: |
 | ![Correct 0](prediction_samples/correct_0.png) | ![Correct 1](prediction_samples/correct_1.png) |
 
-### Incorrect Predictions (Error Analysis)
-| Incorrect Sample 0 | Incorrect Sample 1 |
-| :---: | :---: |
-| ![Incorrect 0](prediction_samples/incorrect_0.png) | ![Incorrect 1](prediction_samples/incorrect_1.png) |
+## Error Analysis (Interpretability)
 
----
-Developed as part of the Computer-Vision project suite.
+To understand why the model fails on certain cases, we utilize **Vision Transformer (ViT) Attention Maps**. By visualizing the attention from the `[CLS]` token to the image patches, we can see where the model is "looking" during classification.
+
+### Why does the model make mistakes?
+
+Our analysis reveals that the primary cause of incorrect predictions is **misaligned attention**. In many error cases, the model fails to focus on the anatomical fracture site and is instead distracted by:
+- **Medical Hardware**: Metal plates, screws, and pins.
+- **Orientation Markers**: Labels like "R" (Right) or "L" (Left) and other text on the X-ray.
+- **Background Noise**: High-contrast areas outside the bone structure.
+
+| Sample Error Analysis 1 | Sample Error Analysis 2 |
+| :---: | :---: |
+| ![Error 1](docs/assets/analysis_error_1.png) | ![Error 10](docs/assets/analysis_error_10.png) |
+
+In the examples above, the model predicted "Not Fractured" despite a "Fractured" ground truth because its attention (heatmaps) was concentrated on labels and peripheral markers rather than the subtle fracture lines.
+
 
