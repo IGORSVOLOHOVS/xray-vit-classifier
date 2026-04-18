@@ -90,7 +90,7 @@ class AttentionVisualizer:
         att_grid = (att_grid - att_grid.min()) / (att_grid.max() - att_grid.min())
 
         # Plotting
-        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+        _, axes = plt.subplots(1, 2, figsize=(12, 6))
         axes[0].imshow(image)
         t_cls = self.data_provider.classes[true_label]
         p_cls = self.data_provider.classes[pred]
