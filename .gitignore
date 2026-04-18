@@ -19,11 +19,12 @@ Bone_Fracture_Binary_Classification/
 dist/
 build/
 *.egg-info/
-prediction_samples/
-attention_maps/
 results/
 out/
-*.png
+# Allow samples for README
+!prediction_samples/
+!attention_maps/
+!*.png
 
 # IDEs
 .vscode/

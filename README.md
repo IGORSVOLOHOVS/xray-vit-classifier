@@ -86,7 +86,7 @@ Our analysis shows that errors often occur due to **misaligned attention** on me
 
 | Attention Map Analysis | Description |
 | :---: | :--- |
-| ![Error Analysis](attention_maps/error_1_t0_p1.png) | Model distracted by metal implants rather than the fracture site. |
+| ![Error Analysis](attention_maps/error_1_true_0_pred_1.png) | Model distracted by metal implants rather than the fracture site. |
 
 ## 🛠 Development
 
