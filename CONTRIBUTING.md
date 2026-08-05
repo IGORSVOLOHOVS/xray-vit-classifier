@@ -1,42 +1,59 @@
-# Contributing to X-Ray ViT Classifier
+# Contributing
 
-Thank you for your interest in contributing to this project! This document outlines the standards and workflows we follow to maintain code quality and architectural integrity.
+## Setting up
 
-## Development Principles
+```bash
+git clone https://github.com/IGORSVOLOHOVS/repo-quality-template
+cd repo-quality-template
+python scripts/install_dependencies.py --dev
+pre-commit install
+```
 
-1.  **Clean Architecture**: Keep the business logic (Functional Core) isolated from external frameworks or IO (Imperative Shell).
-2.  **Strict Typing**: All Python code must have type hints and pass `mypy --strict`.
-3.  **Semantic Commits**: We use Conventional Commits (`type(scope): Description.`).
-4.  **Ruff is the Law**: All code must be formatted and linted by Ruff.
+`pre-commit install` is not optional — it is what keeps formatting and secret
+scanning out of code review.
 
-## Getting Started
+## The loop
 
-1.  Clone the repository.
-2.  Install dependencies:
-    ```bash
-    pip install -e .
-    ```
-3.  Install pre-commit hooks:
-    ```bash
-    pip install pre-commit
-    pre-commit install
-    ```
+```bash
+pytest                                   # tests, with coverage
+ruff check . && ruff format .            # lint and format
+pytest benchmarks --benchmark-only       # only if you touched the domain layer
+python scripts/collect_quality_metrics.py
+```
 
-## Development Workflow
+CI runs all of these. Running them locally first is faster than waiting for a
+red build.
 
--   Use `make lint` to run static analysis.
--   Use `make test` to run the test suite.
--   Ensure all PRs include relevant tests.
+## Rules that the build enforces
 
-## Commit Guidelines
+| Rule | Enforced by |
+| --- | --- |
+| Coverage at or above 85 percent | `fail_under` in `pyproject.toml` |
+| Cyclomatic complexity at most 10 per function | `ruff` rule `C90` |
+| No credential in any commit | `gitleaks`, in pre-commit and CI |
+| Exactly three branches | `scripts/enforce_branch_policy.py` |
+| Formatting | `ruff format` |
 
-Every commit must follow the semantic pattern:
--   `feat(scope): ...`
--   `fix(scope): ...`
--   `docs(scope): ...`
--   `refactor(scope): ...`
+## Branches
 
-Example: `feat(core): Add Protocol for model engine.`
+Work on `dev`. Do not push any other branch — see `docs/branching.md`. Short
+lived work belongs in your local clone; rebase onto `dev` and push `dev`.
 
----
-*Follow the [ISO 25010](https://iso25000.com/index.php/en/iso-25000-standards/iso-25010) quality attributes when designing new features.*
+## Commits
+
+Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `perf:`,
+`build:`, `ci:`, `chore:`, `security:`.
+
+Write what changed and why, in English. A commit message that only says what the
+diff already shows is not worth reading.
+
+## Adding a feature
+
+1. Put the logic in `core.py`, with no I/O.
+2. Add tests for it, including the empty and invalid cases.
+3. If it could be slow, add a benchmark.
+4. Update the README if the behaviour is user-visible.
+5. Add a `CHANGELOG.md` entry under `[Unreleased]`.
+
+Step 1 matters: logic that reaches into `cli.py` or `app.py` cannot be reused by
+the other shell and is much harder to test.
