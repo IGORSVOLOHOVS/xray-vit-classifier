@@ -1,6 +1,6 @@
 [project]
 name = "xray-vit-classifier"
-version = "0.1.0"
+version = "1.0.0"
 description = "A high-performance binary classifier for detecting bone fractures in X-ray images using Vision Transformers (ViT)."
 readme = "README.md"
 requires-python = ">=3.10"
