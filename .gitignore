@@ -37,3 +37,4 @@ out/
 # Logs
 *.log
 profile_results*.txt
+.env
