@@ -144,8 +144,14 @@ def measure_portability() -> Metric:
     requires = (
         m.group(1) if (m := re.search(r'requires-python\s*=\s*"([^"]+)"', pyproject)) else "?"
     )
-    ci = ROOT / ".github" / "workflows" / "ci.yml"
-    ci_text = ci.read_text(encoding="utf-8") if ci.is_file() else ""
+    # Every workflow, not just one called ci.yml: this repository's pipeline is
+    # python-ci.yml, and reading a single hard-coded name reported "no operating
+    # systems, no interpreter versions" for a repository that tests on both.
+    workflows = ROOT / ".github" / "workflows"
+    ci_text = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace")
+        for path in sorted(workflows.glob("*.y*ml"))
+    )
     operating_systems = sorted(set(re.findall(r"(ubuntu|windows|macos)-latest", ci_text)))
     versions = sorted(set(re.findall(r'"(3\.\d+)"', ci_text)))
     # Two OSes and two interpreter versions is the bar for "portable enough".

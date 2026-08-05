@@ -38,3 +38,8 @@ out/
 *.log
 profile_results*.txt
 .env
+
+# Build output
+release/
+.coverage
+coverage.xml

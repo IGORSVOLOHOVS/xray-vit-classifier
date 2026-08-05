@@ -65,7 +65,9 @@ dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
     "pre-commit>=3.6.0",
+    "pytest-benchmark>=4.0.0",
 ]
+release = ["build>=1.0"]
 
 [tool.ruff.lint.per-file-ignores]
 # The helper scripts drive git and build tools through subprocess on
