@@ -80,6 +80,31 @@ python main.py explain --count 10
 
 **Global Accuracy: 83%** (Target: >80%)
 
+### ⚡ Preprocessing throughput
+
+Accuracy is one half; the other is how fast an image reaches the model.
+Preprocessing runs on every image, on the CPU, while the GPU waits — so a slow
+transform caps throughput no matter how fast the model is. Measured by
+`benchmarks/test_preprocessing_performance.py`, median of many rounds:
+
+| What is measured | Median |
+| --- | ---: |
+| Transform a 64 × 64 grayscale image | 15.3 µs |
+| Transform a 256 × 256 grayscale image | 85.2 µs |
+| Transform a 1024 × 1024 grayscale image | 922.2 µs |
+| Transform a 256 × 256 image already in RGB | 7.5 µs |
+
+Cost is linear in image area: sixteen times the pixels costs about eleven times
+the time. Feeding full-resolution radiographs straight in therefore makes
+preprocessing, not the model, the bottleneck — downscale before the loader.
+
+An image already in RGB skips the conversion and costs a tenth of the grayscale
+path at the same size, which is where the conversion cost actually lives.
+
+```bash
+pytest benchmarks --benchmark-only
+```
+
 ## 🔍 Interpretability (Error Analysis)
 
 Our analysis shows that errors often occur due to **misaligned attention** on medical hardware or orientation labels.
