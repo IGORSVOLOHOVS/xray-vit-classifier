@@ -1,101 +1,38 @@
-# 🩻 X-Ray Bone Fracture Classifier (ViT)
+# xray-vit-classifier
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with mypy](https://img.shields.io/badge/checked_with-mypy-21c0ad.svg)](http://mypy-lang.org/)
+A console tool that fine-tunes a Vision Transformer to detect bone fractures in X-ray images. It takes the pretrained `google/vit-base-patch16-224`, freezes the backbone, trains a new two-way head on a folder of labelled radiographs, and reports precision and recall on the test split. A second command draws attention maps over the images the model got wrong, to show what it was looking at.
 
-A professional, high-performance binary classifier for detecting bone fractures in X-ray images using **Vision Transformers (ViT)**. Designed with **Clean Architecture** principles and optimized for **ISO 25010** quality attributes.
+The dataset and the weights are not in this repository. The first real run downloads the backbone from Hugging Face. The tests never do: they run offline and build a small model from a config.
 
-![Hero Image](prediction_samples/correct_0.png)
+## Use
 
-## 📌 Features
-
--   **SOTA Architecture**: Fine-tuned `google/vit-base-patch16-224`.
--   **Clean Architecture**: Strict separation between Functional Core (logic) and Imperative Shell (CLI/UI).
--   **Terminal UX**: Premium console interface powered by `rich` with hardware-aware logs and progress bars.
--   **Interpretability**: Built-in attention map visualization for error analysis.
--   **Quality Enforced**: Validated with `mypy --strict`, `ruff`, and `bandit`.
-
-## 🏗 Architecture
-
-The project follows a **Functional Core / Imperative Shell** pattern to maximize testability and maintainability (ISO 25010).
-
-```mermaid
-graph TD
-    subgraph Imperative_Shell [Imperative Shell (Adapters)]
-        CLI[main.py CLI]
-        UI[UIHandler]
-    end
-
-    subgraph Functional_Core [Functional Core (Domain)]
-        Engine[TrainingEngine]
-        Interpret[AttentionVisualizer]
-    end
-
-    subgraph Infrastructure [Infrastructure]
-        Model[ModelWrapper / ViT]
-        Data[DatasetManager]
-    end
-
-    CLI --> Engine
-    CLI --> Interpret
-    Engine --> Model
-    Engine --> Data
-    Interpret --> Model
-    Engine --> UI
+```powershell
+.\recipe.ps1 run train
+.\recipe.ps1 run explain
 ```
 
-## 🚀 Installation
+`docs/install.md` says what to install and where the dataset goes. `docs/manual.md` describes the commands, including which options they do not read yet. `.\recipe.ps1 test` runs the tests, mypy and ruff.
 
-```bash
-# Clone the repository
-git clone https://github.com/username/xray-vit-classifier.git
-cd xray-vit-classifier
+## Results
 
-# Install using Makefile
-make install
-```
+One run recorded before this repository came to the lab, on the test split:
 
-## tool usage (Professional CLI)
+| Metric | Fractured | Not fractured | Macro average |
+| --- | --- | --- | --- |
+| Precision | 0.84 | 0.82 | 0.83 |
+| Recall | 0.79 | 0.86 | 0.83 |
+| F1 | 0.81 | 0.84 | 0.83 |
 
-```bash
-# Train the model (1 epoch by default)
-python main.py train
+Accuracy was 83%. `prediction_samples/` and `attention_maps/` hold the images from that run. Nothing here re-runs it, because the dataset is not in the repository.
 
-# Evaluate and generate prediction samples
-python main.py eval --weights xray_vit_classifier_v0.1.0.pt
+## What is here
 
-# Analyze errors with Attention Heatmaps
-python main.py explain --count 10
-```
+- `main.py` is the command line, and `visualize_attention.py` the attention-map run behind `explain`.
+- `src/xray_classifier/` is the package: `models.py` wraps the ViT, `data.py` loads the image folders, `engine.py` trains and evaluates, `interpretability.py` draws the maps, `ui.py` is the console output.
+- `tests/` holds the tests. `benchmarks/` measures the image transform with `pytest benchmarks --benchmark-only`, on a stand-in processor so that it measures this project's code and loads no weights. The numbers from before the lab are on the tag `import/dev`.
+- `docs/` holds the architecture notes, the model decision in `docs/adr/`, the ISO/IEC 25010 assessment in `docs/quality-iso25010.md`, and `docs/branching.md`.
+- `scripts/` holds the helpers kept from before the lab. `collect_quality_metrics.py` produces the numbers of the assessment and `build_release_artifact.py` a wheel with checksums. `profile_application.py` came from a template and imports a package this repository does not have, so it does not run.
 
-## 📊 Performance Metrics
+## Licence
 
-| Metric | Fractured | Not Fractured | Macro Avg |
-| :--- | :---: | :---: | :---: |
-| **Precision** | 0.84 | 0.82 | 0.83 |
-| **Recall** | 0.79 | 0.86 | 0.83 |
-| **F1-Score** | 0.81 | 0.84 | 0.83 |
-
-**Global Accuracy: 83%** (Target: >80%)
-
-## 🔍 Interpretability (Error Analysis)
-
-Our analysis shows that errors often occur due to **misaligned attention** on medical hardware or orientation labels.
-
-| Attention Map Analysis | Description |
-| :---: | :--- |
-| ![Error Analysis](attention_maps/error_1_true_0_pred_1.png) | Model distracted by metal implants rather than the fracture site. |
-
-## 🛠 Development
-
-Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and coding standards.
-
-```bash
-make lint   # Run Ruff and Mypy --strict
-make test   # Run unit tests
-```
-
----
-*Developed with precision for medical CV applications.*
+Apache 2.0, see `LICENSE`.
