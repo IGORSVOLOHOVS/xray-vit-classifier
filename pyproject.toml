@@ -1,26 +1,70 @@
-[project]
-name = "xray-vit-classifier"
-version = "1.0.0"
-description = "A high-performance binary classifier for detecting bone fractures in X-ray images using Vision Transformers (ViT)."
-readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "torch>=2.0.0",
-    "torchvision>=0.15.0",
-    "transformers>=4.30.0",
-    "datasets>=2.12.0",
-    "scikit-learn>=1.2.0",
-    "rich>=13.0.0",
-    "pillow>=9.5.0",
-]
+# pyproject.toml - Python's own file for xray-vit-classifier.
+#
+# It pins the toolchain. `recipe.ps1 test` runs pytest, mypy, ruff check and ruff
+# format, and every setting those four read is here. There are no task-runner
+# sections: the recipe's verbs are the tasks.
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+# Pinned with a version, not a bare name: an unpinned backend changes what
+# `recipe.ps1 build` produces without anyone editing this file.
+requires = ["setuptools==80.9.0"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "xray-vit-classifier"
+# This must equal $Version in recipe.ps1: `recipe.ps1 test` fails when they disagree.
+version = "1.1.0"
+description = "Console tool that fine-tunes a Vision Transformer to detect bone fractures in X-ray images."
+readme = "README.md"
+# The licence this repository has carried since its first commit: see the R-18 exception.
+license = "Apache-2.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    # The versions uv.lock held before the lab. PyPI's Windows wheels of torch are the CPU
+    # build, so the runner never fetches a CUDA stack.
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==5.5.4",
+    "datasets==4.8.4",
+    "scikit-learn==1.8.0",
+    "rich==15.0.0",
+    "pillow==12.2.0",
+    # interpretability.py imports it, and nothing declared it before the lab.
+    "matplotlib==3.10.8",
+]
+
+[project.optional-dependencies]
+# Only scripts/build_release_artifact.py needs this. The lab builds with `recipe.ps1 build`.
+release = ["build==1.3.0"]
+
+[dependency-groups]
+# `uv run` installs this group by default, so test.yaml's Runner health step finds
+# ruff, pytest and mypy through `uv run --frozen <tool> --version`.
+dev = [
+    "ruff==0.16.1",
+    "mypy==2.3.0",
+    "pytest==8.4.2",
+    "pytest-cov==5.0.0",
+    "coverage==7.15.2",
+    # benchmarks/ and scripts/collect_quality_metrics.py, kept from before the lab.
+    "pytest-benchmark==5.2.3",
+    "radon==6.0.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv]
+# The tests and `recipe.ps1 run` use the source tree, so uv does not install the project.
+package = false
+
 [tool.ruff]
+# Ruff refuses to run at all when its own version is not this one.
+required-version = "0.16.1"
+target-version = "py313"
 line-length = 100
-target-version = "py310"
+# Section 7 prints these verbatim, so neither this linter's rule set nor the formatter may touch them.
+extend-exclude = [".claude", "tests/manual/serve.py", "tools/wiki.py"]
 
 [tool.ruff.lint]
 select = [
@@ -46,30 +90,41 @@ ignore = [
 known-first-party = ["xray_classifier"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
-[tool.mypy]
-python_version = "3.10"
-strict = true
-ignore_missing_imports = true
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-disallow_any_generics = true
-check_untyped_defs = true
-no_implicit_reexport = true
-disallow_untyped_defs = true
-
-[project.optional-dependencies]
-dev = [
-    "ruff>=0.3.0",
-    "mypy>=1.9.0",
-    "pytest>=8.0.0",
-    "pytest-cov>=4.1.0",
-    "pre-commit>=3.6.0",
-    "pytest-benchmark>=4.0.0",
-]
-release = ["build>=1.0"]
-
 [tool.ruff.lint.per-file-ignores]
 # The helper scripts drive git and build tools through subprocess on
 # purpose; the bandit checks flag that by design.
 "scripts/*" = ["S404", "S603", "S607", "S310", "PLR0912", "C901", "ANN", "D"]
+# Measured on adoption: this file is the lab's own, written to its 120 columns.
+"tests/test_manual_list.py" = ["E501", "PT018"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+pythonpath = ["src", "."]
+# The floor is 9 because that is what the suite measures: see the R-12 exception.
+addopts = "-q --cov --cov-report=term --cov-fail-under=9"
+
+[tool.coverage.run]
+# Every folder of this repository's own code, named. `.` alone reaches main.py and
+# visualize_attention.py but walks only into packages, so src/ and scripts/, which have no
+# __init__.py, would drop every file nothing imported instead of reporting it at 0%.
+source = [".", "src/xray_classifier", "scripts"]
+branch = true
+omit = ["tests/*", "benchmarks/*", "tools/*", ".claude/*", ".venv/*", "build/*", "dist/*"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["src", "main.py", "visualize_attention.py", "tools"]
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+
+# THE SILENCE LIST, measured on adoption: it only ever gets shorter (R-12).
+# 2 names, both third-party, neither with a py.typed marker at the pinned version.
+# None of this repository's own code is silenced.
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "torchvision.*"]
+ignore_missing_imports = true
