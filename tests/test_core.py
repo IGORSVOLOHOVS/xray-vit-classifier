@@ -1,11 +1,25 @@
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-import pytest
 import torch
+from transformers import ViTConfig, ViTForImageClassification
 
 from xray_classifier.data import DatasetManager, ViTTransform
 from xray_classifier.models import ModelWrapper
+
+
+def tiny_vit() -> ViTForImageClassification:
+    """The real model class, built from a small config: there are no weights to fetch."""
+    config = ViTConfig(
+        hidden_size=32,
+        num_hidden_layers=1,
+        num_attention_heads=2,
+        intermediate_size=64,
+        image_size=32,
+        patch_size=16,
+        num_labels=5,
+    )
+    return ViTForImageClassification(config)
 
 
 def test_vit_transform_rgb() -> None:
@@ -24,14 +38,23 @@ def test_vit_transform_rgb() -> None:
 
 
 def test_model_wrapper_initialization() -> None:
-    """Tests that the model wrapper initializes with correct head size."""
-    # We use a tiny model to speed up initialization if possible,
-    # but here we just check if it loads.
+    """The wrapper replaces the head with a two-way one and trains only that head."""
     model_name = "google/vit-base-patch16-224"
-    wrapper = ModelWrapper(model_name, num_labels=2)
+    with (
+        patch("xray_classifier.models.ViTImageProcessor.from_pretrained") as processor,
+        patch(
+            "xray_classifier.models.ViTForImageClassification.from_pretrained",
+            return_value=tiny_vit(),
+        ) as model,
+    ):
+        wrapper = ModelWrapper(model_name, num_labels=2)
 
+    processor.assert_called_once_with(model_name)
+    model.assert_called_once_with(model_name, output_attentions=True)
     assert wrapper.num_labels == 2
     assert wrapper.model.classifier.out_features == 2
+    trainable = {name for name, value in wrapper.model.named_parameters() if value.requires_grad}
+    assert trainable == {"classifier.weight", "classifier.bias"}
 
 
 def test_dataset_manager_paths() -> None:
