@@ -11,12 +11,9 @@ Expect an acknowledgement within a few days.
 
 | Control | Where it runs |
 | --- | --- |
-| Secret scanning before commit | `gitleaks` in `.pre-commit-config.yaml` |
-| Secret scanning over full history | `gitleaks` job in `.github/workflows/ci.yml`, with `fetch-depth: 0` |
-| Private key detection | `detect-private-key` pre-commit hook |
-| Static security linting | `ruff` rule set `S` (bandit rules) |
-| Pinned dependencies | `requirements-dev.lock` |
-| Artefact integrity | `.sha256` published beside every release file |
+| Static security linting | `ruff` rule set `S` (bandit rules), in `.\recipe.ps1 test` |
+| Pinned dependencies | `uv.lock` |
+| Keys kept out of git | `.claude/.env` is gitignored: rule 4 of `CLAUDE.md` |
 
 ## Handling credentials
 
